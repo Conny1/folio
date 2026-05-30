@@ -1,0 +1,7 @@
+{
+  "name": "Folio",
+  "description": "A tree-based personal note and task manager with a warm notebook aesthetic.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

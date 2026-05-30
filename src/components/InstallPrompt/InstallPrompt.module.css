@@ -1,0 +1,72 @@
+.container {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 360px;
+  z-index: 100;
+}
+
+.banner {
+  background: var(--color-sidebar);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 30px -10px rgba(42, 31, 18, 0.15);
+}
+
+.text {
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.installBtn {
+  background: var(--color-accent);
+  color: var(--color-active-text);
+  border: none;
+  border-radius: var(--radius-small);
+  padding: 7px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: opacity 0.15s ease;
+  touch-action: manipulation;
+}
+
+.installBtn:hover {
+  opacity: 0.9;
+}
+
+.dismissBtn {
+  background: transparent;
+  color: var(--color-accent);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  touch-action: manipulation;
+}
+
+
+@media (max-width: 768px) {
+  .container {
+    bottom: 16px;
+  }
+}
