@@ -2,57 +2,65 @@ import React, { useState, useEffect } from 'react';
 import { Download, Smartphone, Share2, Layers, ShieldCheck, Check, BookOpen, ChevronRight, Info } from 'lucide-react';
 
 export const AppGuideView: React.FC = () => {
-  const [isPWAInstallable, setIsPWAInstallable] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   // Check PWA and platform status
   useEffect(() => {
-    const checkStatus = () => {
+    const checkState = () => {
       const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
       setIsStandalone(standalone);
-
-      const promptExists = !!(window as any).deferredPWAInstallPrompt;
-      setIsPWAInstallable(promptExists);
 
       const posIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
       setIsIOS(posIOS);
     };
 
-    checkStatus();
+    checkState();
 
-    // Listen to our custom event or status updates
-    window.addEventListener('pwa-before-install-prompt-available', checkStatus);
-    window.addEventListener('pwa-before-install-prompt-dismissed', checkStatus);
+    // Check if prompt was already stored globally in the window object on boot
+    if ((window as any).deferredPWAInstallPrompt) {
+      setDeferredPrompt((window as any).deferredPWAInstallPrompt);
+      setShowInstallBtn(true);
+    }
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      (window as any).deferredPWAInstallPrompt = e;
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
-      window.removeEventListener('pwa-before-install-prompt-available', checkStatus);
-      window.removeEventListener('pwa-before-install-prompt-dismissed', checkStatus);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
     };
   }, []);
 
-  // Trigger PWA Prompt installation
-  const installPWAApp = async () => {
-    const deferredPrompt = (window as any).deferredPWAInstallPrompt;
+  const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      alert('To download Folio to your device:\n\n• For Android / Chrome: Click the three dots (menu) in your browser and choose "Install App" or "Add to Home screen".\n• For iOS / Safari: Tap the Share button and select "Add to Home Screen".');
+      alert('To download Folio to your device:\n\n• For Android / Chrome: Use your browser settings menu and choose "Add to Home screen" or "Install app".\n• For iOS / Safari: Tap the Share button and select "Add to Home Screen".');
       return;
     }
-
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('User installed PWA successfully');
-      setIsPWAInstallable(false);
+    if (outcome === "accepted") {
+      console.log("User accepted the install prompt");
     }
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-10">
       {/* Intro Header */}
       <div className="space-y-4 text-center sm:text-left">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-bold uppercase tracking-wider text-accent">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/15 border border-accent/20 text-xs font-bold uppercase tracking-wider text-accent">
           <BookOpen size={13} />
           <span>Application Dashboard</span>
         </div>
@@ -87,7 +95,7 @@ export const AppGuideView: React.FC = () => {
               </div>
             ) : (
               <button 
-                onClick={installPWAApp}
+                onClick={handleInstallClick}
                 className="px-6 py-3 cursor-pointer bg-accent hover:opacity-90 text-active-text text-xs font-bold uppercase tracking-widest rounded-small transition-all inline-flex items-center gap-2 shadow-xs"
               >
                 <Download size={14} />
@@ -138,7 +146,7 @@ export const AppGuideView: React.FC = () => {
         
         {/* Card 1: Nesting Hierarchy */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
-          <div className="p-3 w-min rounded-small bg-[#7A9A50]/10 text-progress-fill">
+          <div className="p-3 w-min rounded-small bg-progress-fill/10 text-progress-fill">
             <Layers size={22} />
           </div>
           <div className="space-y-2">
@@ -157,7 +165,7 @@ export const AppGuideView: React.FC = () => {
 
         {/* Card 2: 100% Offline Integrity */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
-          <div className="p-3 w-min rounded-small bg-[#8B6A3E]/10 text-accent">
+          <div className="p-3 w-min rounded-small bg-accent/10 text-accent">
             <ShieldCheck size={22} />
           </div>
           <div className="space-y-2">
@@ -176,7 +184,7 @@ export const AppGuideView: React.FC = () => {
 
         {/* Card 3: Intelligent Progress */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
-          <div className="p-3 w-min rounded-small bg-progress-fill/10 text-progress-fill">
+          <div className="p-3 w-min rounded-small bg-progress-fill/15 text-progress-fill">
             <Check size={22} />
           </div>
           <div className="space-y-2">
@@ -194,7 +202,7 @@ export const AppGuideView: React.FC = () => {
 
         {/* Card 4: High-Performance PWA */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
-          <div className="p-3 w-min rounded-small bg-accent/10 text-accent">
+          <div className="p-3 w-min rounded-small bg-accent/15 text-accent">
             <Smartphone size={22} />
           </div>
           <div className="space-y-2">
