@@ -279,61 +279,7 @@ export const useStore = create<FolioState>()(
           };
         };
 
-        // Seed if empty after hydration
-        if (state.roots.length === 0) {
-          const rootId = uuidv4();
-          const child1Id = uuidv4();
-          const child2Id = uuidv4();
-
-          const demoRoot: Card = {
-            id: rootId,
-            title: '🚀 Folio Interactive Guide',
-            note: '',
-            type: 'mixed',
-            tasks: [
-              { id: uuidv4(), text: 'Welcome to your new spatial notebook! Each line can be a plain note or a tracked task.', done: false, isCheckbox: false },
-              { id: uuidv4(), text: 'Click the toggle checkbox icon on any line to switch between "Note" and "Checkbox Task" modes.', done: false, isCheckbox: false },
-              { id: uuidv4(), text: 'Try completing this checklist task to see progress update in real-time!', done: false, isCheckbox: true },
-              { id: uuidv4(), text: 'You can nest sub-cards within tasks recursively using the Plus (+) button next to any line.', done: false, isCheckbox: false },
-              { id: uuidv4(), text: 'Explore the "Personal Goals" checklist attached directly as a child card!', done: false, isCheckbox: true, childCardId: child1Id },
-              { id: uuidv4(), text: 'Check out "Work Workspace" here', done: false, isCheckbox: true, childCardId: child2Id }
-            ],
-            children: [
-              {
-                id: child1Id,
-                title: 'Personal Goals',
-                note: '',
-                type: 'note',
-                tasks: [
-                  { id: uuidv4(), text: 'Drink more water daily', done: true, isCheckbox: true },
-                  { id: uuidv4(), text: 'Read 12 books this year (One book per month)', done: false, isCheckbox: true },
-                  { id: uuidv4(), text: 'Start morning meditation routines', done: false, isCheckbox: false }
-                ],
-                children: [],
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-              },
-              {
-                id: child2Id,
-                title: 'Work Workspace',
-                note: '',
-                type: 'checklist',
-                tasks: [
-                  { id: uuidv4(), text: 'Finalize Q1 strategic briefing notes', done: false, isCheckbox: true },
-                  { id: uuidv4(), text: 'Send updated project budget sheets', done: false, isCheckbox: true }
-                ],
-                children: [],
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-              }
-            ],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          };
-          
-          state.roots = [demoRoot];
-          state.activeCardId = demoRoot.id;
-        } else {
+     
           // Sanitize existing roots if they contain non-UUID IDs
           const needsSanitization = state.roots.some(r => !isUuid(r.id));
           if (needsSanitization) {
@@ -349,7 +295,7 @@ export const useStore = create<FolioState>()(
             state.roots = sanitizedRoots;
             state.activeCardId = newActiveId || (sanitizedRoots[0]?.id || null);
           }
-        }
+        
       }
     }
   )
