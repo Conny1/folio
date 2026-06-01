@@ -1,16 +1,14 @@
 import React, { useMemo } from 'react';
-import { useStore, calculateProgress, findCardAndPath, CardType } from '../../store/useStore';
+import { useStore, calculateProgress, findCardAndPath } from '../../store/useStore';
 import { Breadcrumb } from '../Breadcrumb/Breadcrumb';
 import { TaskList } from './TaskList';
 import { ChildCards } from './ChildCards';
-import { NoteEditor } from './NoteEditor';
 import { AppGuideView } from './AppGuideView';
 import { motion } from 'motion/react';
-import { Trash2, FileText, CheckSquare, Layers, Inbox, Search } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { Trash2, Inbox, Search } from 'lucide-react';
 
 export const CardView: React.FC = () => {
-  const { roots, activeCardId, updateCard, deleteCard, setActiveCard, updateCardType, navigationDirection } = useStore();
+  const { roots, activeCardId, updateCard, deleteCard, setActiveCard, navigationDirection } = useStore();
 
   const activeCardData = useMemo(() => {
     if (!activeCardId || activeCardId === 'info') return null;
@@ -28,7 +26,7 @@ export const CardView: React.FC = () => {
         {/* Top Bar */}
         <div className="h-14 border-b border-border flex items-center px-4 lg:px-8 shrink-0 justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-accent">System Dashboard</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#7A9A50]">System Guide Hub</span>
           </div>
           {roots.length > 0 && (
             <button
@@ -73,11 +71,9 @@ export const CardView: React.FC = () => {
   const { card, path } = activeCardData;
   const progress = calculateProgress(card);
 
-  const types: { id: CardType; icon: any; label: string }[] = [
-    { id: 'note', icon: FileText, label: 'Note' },
-    { id: 'checklist', icon: CheckSquare, label: 'Tasks' },
-    { id: 'mixed', icon: Layers, label: 'Mixed' },
-  ];
+  const checkableTasks = card.tasks?.filter((t: any) => t.isCheckbox) || [];
+  const children = card.children || [];
+  const showProgressBar = checkableTasks.length > 0 || children.length > 0;
 
   return (
     <motion.div 
@@ -87,31 +83,10 @@ export const CardView: React.FC = () => {
       className="flex-1 flex flex-col h-screen overflow-hidden bg-bg" 
       key={activeCardId}
     >
-      {/* Top Bar */}
+      {/* Top Bar Navigation */}
       <div className="h-14 border-b border-border flex items-center px-4 lg:px-8 shrink-0 justify-between gap-4">
         <div className="flex-1 min-w-0 pl-10 lg:pl-0">
           <Breadcrumb path={path} onNavigate={(id) => setActiveCard(id, 'out')} />
-        </div>
-        
-        <div className="flex items-center gap-1 bg-accent/5 p-1 rounded-small shrink-0">
-          {types.map(t => {
-            const Icon = t.icon;
-            const isActive = card.type === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => updateCardType(card.id, t.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-small text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer",
-                  isActive ? "bg-accent text-active-text" : "text-muted-text hover:bg-accent/10"
-                )}
-                title={t.label}
-              >
-                <Icon size={12} />
-                <span className="hidden sm:inline">{t.label}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -126,7 +101,7 @@ export const CardView: React.FC = () => {
                 type="text"
                 value={card.title}
                 onChange={(e) => updateCard(card.id, { title: e.target.value })}
-                className="text-2xl lg:text-4xl font-bold bg-transparent border-none focus:ring-0 p-0 flex-1 tracking-tight text-text"
+                className="text-2xl lg:text-4xl font-extrabold bg-transparent border-none focus:ring-0 p-0 flex-1 tracking-tight text-text"
               />
               <button 
                 onClick={() => deleteCard(card.id)}
@@ -137,10 +112,10 @@ export const CardView: React.FC = () => {
               </button>
             </div>
 
-            {(card.type === 'checklist' || card.type === 'mixed') && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-text">
-                  <span>Progress</span>
+            {showProgressBar && (
+              <div className="space-y-2 bg-accent/5 p-3.5 border border-accent/10 rounded-card">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-[#7A9A50]">
+                  <span>Notebook Progress</span>
                   <span>{progress}%</span>
                 </div>
                 <div className="h-2 bg-progress-bg rounded-full overflow-hidden">
@@ -155,23 +130,9 @@ export const CardView: React.FC = () => {
             )}
           </div>
 
-          {/* Content Sections based on Type */}
-          <div className="space-y-12">
-            {(card.type === 'note' || card.type === 'mixed') && (
-              <div className="space-y-4">
-                {card.type === 'mixed' && (
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-text">Note</h3>
-                )}
-                <NoteEditor cardId={card.id} initialNote={card.note} />
-              </div>
-            )}
-
-            {(card.type === 'checklist' || card.type === 'mixed') && (
-              <div className="space-y-4">
-                {card.type === 'mixed' && <hr className="border-border/40" />}
-                <TaskList cardId={card.id} />
-              </div>
-            )}
+          {/* Combined Stream List (Notes and Tasks built in-one) */}
+          <div className="space-y-4">
+            <TaskList cardId={card.id} />
           </div>
 
           <hr className="border-border/40" />

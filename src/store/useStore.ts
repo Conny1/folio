@@ -9,6 +9,8 @@ export interface Task {
   id: string;
   text: string;
   done: boolean;
+  isCheckbox?: boolean; // whether this is checkable or just a note line
+  childCardId?: string; // optional linked child card ID
 }
 
 export interface Card {
@@ -33,11 +35,13 @@ interface FolioState {
   setActiveCard: (id: string | null, direction?: 'in' | 'out') => void;
   addRootCard: (type: CardType, title: string) => void;
   addChildCard: (parentId: string, type: CardType, title: string) => void;
+  addChildCardForTask: (cardId: string, taskId: string, type: CardType, title: string) => string;
   updateCard: (id: string, updates: Partial<Omit<Card, 'id' | 'children'>>) => void;
   updateCardType: (id: string, type: CardType) => void;
   deleteCard: (id: string) => void;
-  addTask: (cardId: string, text: string) => void;
+  addTask: (cardId: string, text: string, isCheckbox?: boolean) => void;
   toggleTask: (cardId: string, taskId: string) => void;
+  toggleTaskCheckboxMode: (cardId: string, taskId: string) => void;
   deleteTask: (cardId: string, taskId: string) => void;
   updateTask: (cardId: string, taskId: string, text: string) => void;
 }
@@ -52,17 +56,6 @@ const createNewCard = (title: string, type: CardType = 'note'): Card => ({
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
-
-const findInTree = (cards: Card[], id: string): Card | null => {
-  for (const card of cards) {
-    if (card.id === id) return card;
-    if (card.children.length > 0) {
-      const found = findInTree(card.children, id);
-      if (found) return found;
-    }
-  }
-  return null;
-};
 
 const findAndModify = (cards: Card[], id: string, modifier: (card: Card) => Card): Card[] => {
   return cards.map(card => {
@@ -117,6 +110,36 @@ export const useStore = create<FolioState>()(
         };
       }),
 
+      addChildCardForTask: (cardId, taskId, type, title) => {
+        const newCardId = uuidv4();
+        set((state) => {
+          const newCard: Card = {
+            id: newCardId,
+            title,
+            note: '',
+            type,
+            tasks: [],
+            children: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          
+          const newRoots = findAndModify(state.roots, cardId, (card) => {
+            return {
+              ...card,
+              children: [...card.children, newCard],
+              tasks: card.tasks.map(t => t.id === taskId ? { ...t, childCardId: newCardId } : t),
+              updatedAt: Date.now()
+            };
+          });
+          
+          return {
+            roots: newRoots
+          };
+        });
+        return newCardId;
+      },
+
       updateCard: (id, updates) => set((state) => {
         const newRoots = findAndModify(state.roots, id, (card) => ({
           ...card,
@@ -143,10 +166,10 @@ export const useStore = create<FolioState>()(
         };
       }),
 
-      addTask: (cardId, text) => set((state) => {
+      addTask: (cardId, text, isCheckbox = false) => set((state) => {
         const newRoots = findAndModify(state.roots, cardId, (card) => ({
           ...card,
-          tasks: [...card.tasks, { id: uuidv4(), text, done: false }],
+          tasks: [...card.tasks, { id: uuidv4(), text, done: false, isCheckbox }],
           updatedAt: Date.now()
         }));
         return { roots: newRoots };
@@ -161,21 +184,72 @@ export const useStore = create<FolioState>()(
         return { roots: newRoots };
       }),
 
-      deleteTask: (cardId, taskId) => set((state) => {
+      toggleTaskCheckboxMode: (cardId, taskId) => set((state) => {
         const newRoots = findAndModify(state.roots, cardId, (card) => ({
           ...card,
-          tasks: card.tasks.filter(t => t.id !== taskId),
+          tasks: card.tasks.map(t => {
+            if (t.id === taskId) {
+              const nextIsCheckbox = !t.isCheckbox;
+              return { 
+                ...t, 
+                isCheckbox: nextIsCheckbox,
+                done: nextIsCheckbox ? t.done : false
+              };
+            }
+            return t;
+          }),
           updatedAt: Date.now()
         }));
         return { roots: newRoots };
       }),
 
+      deleteTask: (cardId, taskId) => set((state) => {
+        // Also clean up linked child cards if user deletes a task
+        const cardToModify = findCardAndPath(state.roots, cardId);
+        let childIdToDelete: string | undefined;
+        if (cardToModify) {
+          const task = cardToModify.card.tasks.find(t => t.id === taskId);
+          childIdToDelete = task?.childCardId;
+        }
+
+        let newRoots = findAndModify(state.roots, cardId, (card) => ({
+          ...card,
+          tasks: card.tasks.filter(t => t.id !== taskId),
+          updatedAt: Date.now()
+        }));
+
+        if (childIdToDelete) {
+          newRoots = findAndDelete(newRoots, childIdToDelete);
+        }
+
+        return { 
+          roots: newRoots 
+        };
+      }),
+
       updateTask: (cardId, taskId, text) => set((state) => {
-        const newRoots = findAndModify(state.roots, cardId, (card) => ({
+        // Also update linked child card's title to match task's new text
+        const cardToModify = findCardAndPath(state.roots, cardId);
+        let childIdToUpdate: string | undefined;
+        if (cardToModify) {
+          const task = cardToModify.card.tasks.find(t => t.id === taskId);
+          childIdToUpdate = task?.childCardId;
+        }
+
+        let newRoots = findAndModify(state.roots, cardId, (card) => ({
           ...card,
           tasks: card.tasks.map(t => t.id === taskId ? { ...t, text } : t),
           updatedAt: Date.now()
         }));
+
+        if (childIdToUpdate) {
+          newRoots = findAndModify(newRoots, childIdToUpdate, (child) => ({
+            ...child,
+            title: text,
+            updatedAt: Date.now()
+          }));
+        }
+
         return { roots: newRoots };
       }),
     }),
@@ -198,7 +272,8 @@ export const useStore = create<FolioState>()(
             id: newId,
             tasks: card.tasks.map(t => ({
               ...t,
-              id: isUuid(t.id) ? t.id : uuidv4()
+              id: isUuid(t.id) ? t.id : uuidv4(),
+              isCheckbox: t.isCheckbox !== undefined ? t.isCheckbox : true
             })),
             children: card.children.map(child => sanitizeCard(child, newId))
           };
@@ -208,49 +283,44 @@ export const useStore = create<FolioState>()(
         if (state.roots.length === 0) {
           const rootId = uuidv4();
           const child1Id = uuidv4();
-          const grandchild1Id = uuidv4();
           const child2Id = uuidv4();
 
           const demoRoot: Card = {
             id: rootId,
-            title: '🚀 2026 Plan',
-            note: 'Welcome to Folio! This is a tree-based note manager.\n\n- Everything is a card\n- Cards can have tasks\n- Cards can have children\n- Progress is automatic',
+            title: '🚀 Folio Interactive Guide',
+            note: '',
             type: 'mixed',
             tasks: [
-              { id: uuidv4(), text: 'Learn Folio basics', done: true },
-              { id: uuidv4(), text: 'Create my first tree', done: false }
+              { id: uuidv4(), text: 'Welcome to your new spatial notebook! Each line can be a plain note or a tracked task.', done: false, isCheckbox: false },
+              { id: uuidv4(), text: 'Click the toggle checkbox icon on any line to switch between "Note" and "Checkbox Task" modes.', done: false, isCheckbox: false },
+              { id: uuidv4(), text: 'Try completing this checklist task to see progress update in real-time!', done: false, isCheckbox: true },
+              { id: uuidv4(), text: 'You can nest sub-cards within tasks recursively using the Plus (+) button next to any line.', done: false, isCheckbox: false },
+              { id: uuidv4(), text: 'Explore the "Personal Goals" checklist attached directly as a child card!', done: false, isCheckbox: true, childCardId: child1Id },
+              { id: uuidv4(), text: 'Check out "Work Workspace" here', done: false, isCheckbox: true, childCardId: child2Id }
             ],
             children: [
               {
                 id: child1Id,
                 title: 'Personal Goals',
-                note: 'Focus on health and learning.',
+                note: '',
                 type: 'note',
-                tasks: [],
-                children: [
-                   {
-                    id: grandchild1Id,
-                    title: 'Read 12 books',
-                    note: 'One book per month.',
-                    type: 'checklist',
-                    tasks: [
-                       { id: uuidv4(), text: 'Pick first book', done: false }
-                    ],
-                    children: [],
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                  }
+                tasks: [
+                  { id: uuidv4(), text: 'Drink more water daily', done: true, isCheckbox: true },
+                  { id: uuidv4(), text: 'Read 12 books this year (One book per month)', done: false, isCheckbox: true },
+                  { id: uuidv4(), text: 'Start morning meditation routines', done: false, isCheckbox: false }
                 ],
+                children: [],
                 createdAt: Date.now(),
                 updatedAt: Date.now()
               },
               {
                 id: child2Id,
-                title: 'Work Projects',
-                note: 'Upcoming deadlines.',
+                title: 'Work Workspace',
+                note: '',
                 type: 'checklist',
                 tasks: [
-                  { id: uuidv4(), text: 'Finish Q1 report', done: false }
+                  { id: uuidv4(), text: 'Finalize Q1 strategic briefing notes', done: false, isCheckbox: true },
+                  { id: uuidv4(), text: 'Send updated project budget sheets', done: false, isCheckbox: true }
                 ],
                 children: [],
                 createdAt: Date.now(),
@@ -285,19 +355,47 @@ export const useStore = create<FolioState>()(
   )
 );
 
-// Helper to calculate progress
+// Helper to calculate progress recursively taking into account:
+// 1. All checkable tasks.
+// 2. Unreferenced child cards.
+// If a task is linked to a child card, the task's progress matches the child card's progress, 
+// and the task cannot be set 100% done until the child card is 100% complete.
 export const calculateProgress = (card: Card): number => {
-  if (card.tasks.length > 0) {
-    const done = card.tasks.filter(t => t.done).length;
-    return Math.round((done / card.tasks.length) * 100);
+  const checkableTasks = card.tasks.filter(t => t.isCheckbox);
+  
+  const referencedChildIds = new Set(
+    card.tasks.map(t => t.childCardId).filter(Boolean)
+  );
+  
+  const unreferencedChildren = card.children.filter(child => !referencedChildIds.has(child.id));
+  
+  const items: number[] = [];
+  
+  for (const task of checkableTasks) {
+    if (task.childCardId) {
+      const childCard = card.children.find(child => child.id === task.childCardId);
+      if (childCard) {
+        const childProg = calculateProgress(childCard);
+        items.push(childProg);
+      } else {
+        items.push(task.done ? 100 : 0);
+      }
+    } else {
+      items.push(task.done ? 100 : 0);
+    }
   }
   
-  if (card.children.length > 0) {
-    const totalProgress = card.children.reduce((acc, child) => acc + calculateProgress(child), 0);
-    return Math.round(totalProgress / card.children.length);
+  for (const child of unreferencedChildren) {
+    items.push(calculateProgress(child));
   }
   
-  return 0;
+  if (items.length === 0) {
+    return 0;
+  }
+  
+  const sum = items.reduce((acc, val) => acc + val, 0);
+  const result = Math.round(sum / items.length);
+  return result;
 };
 
 // Helper to find a card and its path

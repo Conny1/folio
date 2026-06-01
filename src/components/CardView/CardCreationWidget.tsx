@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CardType } from '../../store/useStore';
-import { Plus, FileText, CheckSquare, Layers } from 'lucide-react';
+import { Plus, CheckSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface CardCreationWidgetProps {
@@ -17,14 +17,12 @@ export const CardCreationWidget: React.FC<CardCreationWidgetProps> = ({
   className 
 }) => {
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<CardType>('note');
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (title.trim()) {
-      onCreate(type, title.trim());
+      onCreate('mixed', title.trim());
       setTitle('');
-      setType('note');
     }
   };
 
@@ -37,7 +35,7 @@ export const CardCreationWidget: React.FC<CardCreationWidgetProps> = ({
   };
 
   return (
-    <div className={cn("bg-card border border-border rounded-card p-3 space-y-3", className)}>
+    <div className={cn("bg-card border border-border rounded-card p-3.5 space-y-3.5 shadow-xs", className)}>
       <input
         autoFocus
         type="text"
@@ -45,50 +43,33 @@ export const CardCreationWidget: React.FC<CardCreationWidgetProps> = ({
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full bg-transparent border-none focus:ring-0 text-sm p-0 font-medium placeholder:text-border"
+        className="w-full bg-transparent border-none focus:ring-0 text-[13px] p-0 font-bold text-text placeholder:text-border"
       />
       
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setType('note')}
-            className={cn(
-              "p-1.5 rounded-small transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
-              type === 'note' ? "bg-accent text-active-text" : "text-muted-text hover:bg-accent/5"
-            )}
-          >
-            <FileText size={12} />
-            Note
-          </button>
-          <button
-            onClick={() => setType('checklist')}
-            className={cn(
-              "p-1.5 rounded-small transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
-              type === 'checklist' ? "bg-accent text-active-text" : "text-muted-text hover:bg-accent/5"
-            )}
-          >
-            <CheckSquare size={12} />
-            Tasks
-          </button>
-          <button
-            onClick={() => setType('mixed')}
-            className={cn(
-              "p-1.5 rounded-small transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
-              type === 'mixed' ? "bg-accent text-active-text" : "text-muted-text hover:bg-accent/5"
-            )}
-          >
-            <Layers size={12} />
-            Mixed
-          </button>
+        <div className="text-[10px] text-muted-text font-black tracking-wider uppercase flex items-center gap-1">
+          <CheckSquare size={12} className="text-accent" />
+          <span>New Journal Node</span>
         </div>
 
-        <button
-          onClick={() => handleSubmit()}
-          disabled={!title.trim()}
-          className="bg-accent text-active-text p-1.5 rounded-small disabled:opacity-30 transition-opacity"
-        >
-          <Plus size={14} />
-        </button>
+        <div className="flex items-center gap-2">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-[10px] font-black uppercase tracking-wider text-muted-text hover:text-accent px-2.5 py-1.5 rounded-small transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={() => handleSubmit()}
+            disabled={!title.trim()}
+            className="bg-accent text-active-text font-black uppercase tracking-wider text-[10px] px-3.5 py-1.5 rounded-small disabled:opacity-35 hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus size={12} />
+            <span>Create</span>
+          </button>
+        </div>
       </div>
     </div>
   );
