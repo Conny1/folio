@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Smartphone, Share2, Layers, ShieldCheck, Check, BookOpen, ChevronRight, Info, Sparkles, AlertCircle } from 'lucide-react';
+import { Download, Smartphone, Share2, Layers, ShieldCheck, Check, BookOpen, ChevronRight, Info } from 'lucide-react';
 
 export const AppGuideView: React.FC = () => {
   const [isPWAInstallable, setIsPWAInstallable] = useState(false);
@@ -35,7 +35,7 @@ export const AppGuideView: React.FC = () => {
   const installPWAApp = async () => {
     const deferredPrompt = (window as any).deferredPWAInstallPrompt;
     if (!deferredPrompt) {
-      alert('PWA Installer is preparing or already installed. If you are on an iPhone/iPad, please use Safari\'s "Add to Home Screen" option instead!');
+      alert('To download Folio to your device:\n\n• For Android / Chrome: Click the three dots (menu) in your browser and choose "Install App" or "Add to Home screen".\n• For iOS / Safari: Tap the Share button and select "Add to Home Screen".');
       return;
     }
 
@@ -49,117 +49,88 @@ export const AppGuideView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
+    <div className="max-w-4xl mx-auto space-y-10">
       {/* Intro Header */}
       <div className="space-y-4 text-center sm:text-left">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-bold uppercase tracking-wider text-accent">
           <BookOpen size={13} />
-          <span>Mobile Native Application Hub</span>
+          <span>Application Dashboard</span>
         </div>
         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-text">
-          Folio Web App Guide
+          How Folio Works
         </h1>
         <p className="text-muted-text max-w-2xl text-sm leading-relaxed">
-          Folio merges structured task check-lists and journaling notes with deep spatial, nested trees. 
-          Through Progressive Web App standards, Folio can be downloaded directly to your phone's home screen, gaining a native full-screen app icon alongside your day-to-day apps.
+          Folio is an elegant, structured journaling notebook. It gives you deep spatial nested cards 
+          linked directly to local fast-loading storage. You can secure it natively on your device shell as an app widget.
         </p>
       </div>
 
-      {/* Dynamic PWA Installer Station */}
-      <div className="bg-card border border-border rounded-card overflow-hidden shadow-sm">
-        <div className="p-6 sm:p-8 bg-sidebar border-b border-border flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-3 flex-1">
+      {/* Main App Download Station */}
+      <div className="bg-card border border-border/80 rounded-card p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-border/40">
+          <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${isStandalone ? 'bg-progress-fill' : 'bg-accent animate-pulse'}`} />
-              <h3 className="text-lg font-bold text-text">Native PWA Application Hub</h3>
+              <h3 className="text-lg font-bold text-text">Native Standalone App Platform</h3>
             </div>
-            <p className="text-xs text-muted-text max-w-xl leading-relaxed">
-              {isStandalone 
-                ? "✓ Folio is already installed and running standalone in fullscreen mode. Your mobile layout fits notches, strips navigation bounds, and loads instantaneously Offline." 
-                : "Folio is built around Progressive Web App standards. Installing it adds it seamlessly to your phone app library alongside stock applications like WhatsApp or Telegram with full offline launch capabilities."}
+            <p className="text-xs text-muted-text leading-relaxed max-w-xl">
+              Applying modern W3C standards, you can install Folio as a lightweight standalone web app. 
+              It strips away standard browser navigation controls, starts in a fullscreen secure view, and runs fully responsive on tablets and smartphones.
             </p>
           </div>
 
           <div className="shrink-0">
             {isStandalone ? (
-              <div className="px-4 py-2 border border-progress-fill/40 text-progress-fill bg-progress-fill/5 text-xs font-bold rounded-small uppercase tracking-wider flex items-center gap-1.5">
-                <Check size={14} />
-                Standalone App Active
+              <div className="px-4 py-2 border border-progress-fill/40 text-progress-fill bg-progress-fill/5 text-xs font-bold rounded-small uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <Check size={14} className="text-progress-fill" />
+                App runs in stand-alone
               </div>
-            ) : isPWAInstallable ? (
+            ) : (
               <button 
                 onClick={installPWAApp}
-                className="px-5 py-3 cursor-pointer bg-accent hover:bg-accent/90 text-active-text text-xs font-extrabold uppercase tracking-widest rounded-small transition-all inline-flex items-center gap-2 shadow-lg shadow-accent/10"
+                className="px-6 py-3 cursor-pointer bg-accent hover:opacity-90 text-active-text text-xs font-bold uppercase tracking-widest rounded-small transition-all inline-flex items-center gap-2 shadow-xs"
               >
                 <Download size={14} />
                 Download App to Device
               </button>
-            ) : isIOS ? (
-              <div className="text-xs text-accent bg-accent/10 border border-accent/20 p-3 rounded-small">
-                <span className="font-bold underline uppercase">iOS Safari:</span> Share <Share2 className="inline ml-1" size={13} /> → "Add to Home Screen"
-              </div>
-            ) : (
-              <div className="text-xs text-muted-text italic flex items-center gap-1.5">
-                <Info size={14} className="text-accent" />
-                <span>Ready for standalone install using your browser's menu (e.g. Chrome's "Install App" option)</span>
-              </div>
             )}
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          {/* Brand Presentation with Mobile PWA icon */}
-          <div className="flex flex-col items-center justify-center p-6 bg-bg border border-border/60 rounded-card space-y-4">
-            <div className="relative">
-              <img 
-                src="/pwa-512x512.png" 
-                alt="Folio App Logo" 
-                className="w-24 h-24 rounded-[22px] shadow-xl border border-border/80 object-cover" 
-                referrerPolicy="no-referrer"
-              />
-              <span className="absolute bottom-[-6px] right-[-6px] bg-progress-fill text-white p-1 rounded-full text-[10px] shadow-md border border-bg">
-                <Smartphone size={12} />
-              </span>
+        {/* Dynamic Instruction Walkthrough panels */}
+        {!isStandalone && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-muted-text">
+            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
+              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
+                <Smartphone size={13} />
+                <span>Android / Chrome</span>
+              </div>
+              <p className="leading-relaxed">
+                Click the <strong className="text-text">Download App to Device</strong> button above OR tap Chrome's three-dot menu and select <strong className="text-text">"Install app"</strong>.
+              </p>
             </div>
-            <div className="text-center">
-              <h4 className="text-sm font-bold text-text">Custom Launcher Badge</h4>
-              <p className="text-[11px] text-muted-text leading-normal max-w-xs mt-1">
-                Your device will use our curated high-resolution icon (above) automatically for the home screen launcher graphic.
+
+            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
+              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
+                <Share2 size={13} />
+                <span>iOS / Safari</span>
+              </div>
+              <p className="leading-relaxed">
+                Tap Safari's bottom <strong className="text-text">Share button</strong> (square with up arrow) and scroll to select <strong className="text-text">"Add to Home Screen"</strong>.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
+              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
+                <ShieldCheck size={13} />
+                <span>Instant Launcher Icon</span>
+              </div>
+              <p className="leading-relaxed">
+                A custom curated brand logo will instantly be pinned to your device's drawer and load and work on local storage.
               </p>
             </div>
           </div>
-
-          {/* Quick instructions path */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-accent">How to Install Offline App:</h4>
-            
-            <div className="space-y-4 text-xs">
-              <div className="flex gap-3">
-                <div className="w-5 h-5 rounded-full bg-accent/10 text-accent font-bold flex items-center justify-center shrink-0">1</div>
-                <div>
-                  <strong className="text-text block mb-0.5">Click the Download Button</strong>
-                  <span className="text-muted-text leading-relaxed">If available above, click it to trigger the native installation prompt configured inside our PWA manifest.</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="w-5 h-5 rounded-full bg-accent/10 text-accent font-bold flex items-center justify-center shrink-0">2</div>
-                <div>
-                  <strong className="text-text block mb-0.5">Safari & alternative browsers</strong>
-                  <span className="text-muted-text leading-relaxed">If downloading directly doesn't launch, look for the browser's sharing/settings menu and select <strong className="text-accent underline">"Add to Home Screen"</strong> or <strong className="text-accent underline">"Install App"</strong>.</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="w-5 h-5 rounded-full bg-accent/10 text-accent font-bold flex items-center justify-center shrink-0">3</div>
-                <div>
-                  <strong className="text-text block mb-0.5">Pre-cached Launch</strong>
-                  <span className="text-muted-text leading-relaxed">Once added, Folio immediately executes like a local binary wrapper without address inputs, completely isolated from browser frame UI.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Feature Bento Grid */}

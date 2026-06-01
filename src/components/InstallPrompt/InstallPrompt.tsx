@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import styles from './InstallPrompt.module.css';
 
 export const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -75,7 +74,7 @@ export const InstallPrompt: React.FC = () => {
 
   const SafariShareIcon = () => (
     <svg 
-      className="inline-block w-4.5 h-4.5 mx-1.5 align-text-bottom text-accent" 
+      className="inline-block w-4 h-4 mx-1.5 align-text-bottom text-accent" 
       fill="none" 
       stroke="currentColor" 
       strokeWidth="2" 
@@ -86,27 +85,33 @@ export const InstallPrompt: React.FC = () => {
   );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.banner}>
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[360px] z-50 md:bottom-4">
+      <div className="bg-sidebar border border-border rounded-card p-4 text-[13px] flex flex-col gap-3 shadow-xl">
         {isIOSPrompt ? (
           <div className="space-y-1 bg-transparent p-0 border-none m-0">
             <div className="font-semibold text-accent mb-1 tracking-tight text-sm">Add to Home Screen</div>
-            <p className={styles.text}>
+            <p className="text-text leading-relaxed">
               Tap the Safari share button <SafariShareIcon /> in the bottom navigation bar and select <strong className="text-accent underline">Add to Home Screen</strong> for a fully native fullscreen experience.
             </p>
           </div>
         ) : (
-          <p className={styles.text}>
+          <p className="text-text leading-relaxed">
             Install <strong>Folio</strong> on your device for immediate offline access, local notebook storage, and a polished fullscreen canvas.
           </p>
         )}
-        <div className={styles.actions}>
+        <div className="flex gap-3 justify-end items-center">
           {!isIOSPrompt && (
-            <button onClick={handleInstall} className={styles.installBtn}>
+            <button 
+              onClick={handleInstall} 
+              className="bg-accent text-active-text border-none rounded-small px-4 py-1.5 cursor-pointer font-bold text-[11px] uppercase tracking-wider hover:opacity-90 transition-opacity touch-manipulation"
+            >
               Install
             </button>
           )}
-          <button onClick={handleDismiss} className={styles.dismissBtn}>
+          <button 
+            onClick={handleDismiss} 
+            className="bg-transparent text-accent border-none px-3 py-1.5 cursor-pointer font-bold text-[11px] uppercase tracking-wider touch-manipulation"
+          >
             Close
           </button>
         </div>
