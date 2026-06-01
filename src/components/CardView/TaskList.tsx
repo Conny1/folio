@@ -154,8 +154,8 @@ export const TaskList: React.FC<TaskListProps> = ({ cardId }) => {
                   )}
                 </div>
 
-                {/* Hover controls / actions */}
-                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity shrink-0">
+                {/*  controls / actions */}
+                <div className=" flex items-center gap-1 transition-opacity shrink-0">
                   {/* Note / Checkbox switcher */}
                   <button
                     onClick={() => toggleTaskCheckboxMode(cardId, task.id)}
