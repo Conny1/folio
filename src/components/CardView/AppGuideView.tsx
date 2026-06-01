@@ -2,58 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { Download, Smartphone, Share2, Layers, ShieldCheck, Check, BookOpen, ChevronRight, Info } from 'lucide-react';
 
 export const AppGuideView: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
 
-  // Check PWA and platform status
   useEffect(() => {
-    const checkState = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
-      setIsStandalone(standalone);
-
-      const posIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-      setIsIOS(posIOS);
-    };
-
-    checkState();
-
-    // Check if prompt was already stored globally in the window object on boot
+    // Immediate checks on mount in case the prompt already fired
     if ((window as any).deferredPWAInstallPrompt) {
-      setDeferredPrompt((window as any).deferredPWAInstallPrompt);
       setShowInstallBtn(true);
     }
 
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      (window as any).deferredPWAInstallPrompt = e;
-      setShowInstallBtn(true);
+    // Listen to updates broadcasted from our floating toast channel
+    const handleStatusChange = (e: Event & { detail?: { available: boolean } }) => {
+      if (e.detail) {
+        setShowInstallBtn(e.detail.available);
+      }
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-    };
+    window.addEventListener('pwa-prompt-status-changed' as any, handleStatusChange);
+    return () => window.removeEventListener('pwa-prompt-status-changed' as any, handleStatusChange);
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert('To download Folio to your device:\n\n• For Android / Chrome: Use your browser settings menu and choose "Add to Home screen" or "Install app".\n• For iOS / Safari: Tap the Share button and select "Add to Home Screen".');
-      return;
-    }
+    const deferredPrompt = (window as any).deferredPWAInstallPrompt;
+    if (!deferredPrompt) return;
+
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
     if (outcome === "accepted") {
-      console.log("User accepted the install prompt");
+      console.log("User installed via Main App Guide view button");
+      // Clean up global state pointers
+      (window as any).deferredPWAInstallPrompt = null;
+      setShowInstallBtn(false);
+      
+      // Let the floating banner component know it can close up shop
+      window.dispatchEvent(new CustomEvent('pwa-prompt-consumed'));
     }
-    setDeferredPrompt(null);
-    setShowInstallBtn(false);
   };
 
   return (
@@ -74,76 +57,38 @@ export const AppGuideView: React.FC = () => {
       </div>
 
       {/* Main App Download Station */}
-      <div className="bg-card border border-border/80 rounded-card p-6 sm:p-8 space-y-6 shadow-xs">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-border/40">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${isStandalone ? 'bg-progress-fill' : 'bg-accent animate-pulse'}`} />
-              <h3 className="text-lg font-bold text-text">Native Standalone App Platform</h3>
+      <div className="space-y-4 mt-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          {showInstallBtn ? (
+            <button
+              onClick={handleInstallClick}
+              className="px-8 py-3 text-base font-bold text-active-text transition-all rounded-lg shadow-md bg-accent hover:opacity-90 active:scale-[0.98] inline-flex items-center gap-2"
+            >
+              <Download size={18} />
+              Install App Version
+            </button>
+          ) : (
+            <div className="px-5 py-3 border border-progress-fill/20 text-progress-fill bg-progress-fill/5 text-sm font-bold rounded-lg uppercase tracking-wider flex items-center gap-2">
+              <Check size={16} />
+              Application is running standalone / Already installed
             </div>
-            <p className="text-xs text-muted-text leading-relaxed max-w-xl">
-              Applying modern W3C standards, you can install Folio as a lightweight standalone web app. 
-              It strips away standard browser navigation controls, starts in a fullscreen secure view, and runs fully responsive on tablets and smartphones.
-            </p>
-          </div>
-
-          <div className="shrink-0">
-            {isStandalone ? (
-              <div className="px-4 py-2 border border-progress-fill/40 text-progress-fill bg-progress-fill/5 text-xs font-bold rounded-small uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                <Check size={14} className="text-progress-fill" />
-                App runs in stand-alone
-              </div>
-            ) : (
-              <button 
-                onClick={handleInstallClick}
-                className="px-6 py-3 cursor-pointer bg-accent hover:opacity-90 text-active-text text-xs font-bold uppercase tracking-widest rounded-small transition-all inline-flex items-center gap-2 shadow-xs"
-              >
-                <Download size={14} />
-                Download App to Device
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Dynamic Instruction Walkthrough panels */}
-        {!isStandalone && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-muted-text">
-            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
-              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
-                <Smartphone size={13} />
-                <span>Android / Chrome</span>
-              </div>
-              <p className="leading-relaxed">
-                Click the <strong className="text-text">Download App to Device</strong> button above OR tap Chrome's three-dot menu and select <strong className="text-text">"Install app"</strong>.
-              </p>
-            </div>
-
-            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
-              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
-                <Share2 size={13} />
-                <span>iOS / Safari</span>
-              </div>
-              <p className="leading-relaxed">
-                Tap Safari's bottom <strong className="text-text">Share button</strong> (square with up arrow) and scroll to select <strong className="text-text">"Add to Home Screen"</strong>.
-              </p>
-            </div>
-
-            <div className="space-y-1.5 p-4 bg-bg border border-border/50 rounded-small">
-              <div className="font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 mb-1 text-[11px]">
-                <ShieldCheck size={13} />
-                <span>Instant Launcher Icon</span>
-              </div>
-              <p className="leading-relaxed">
-                A custom curated brand logo will instantly be pinned to your device's drawer and load and work on local storage.
-              </p>
-            </div>
+        {/* Dynamic Context Browser Assistance Tip */}
+        <div className="bg-card border border-border/60 rounded-card p-4 max-w-2xl flex gap-3 items-start">
+          <Info size={18} className="text-accent shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs text-muted-text leading-relaxed">
+            <p className="font-semibold text-text">Installation Note</p>
+            <p>
+              For the best native experience, we recommend using <strong className="text-text">Google Chrome</strong> or standard Chromium browsers to prompt instant installations. On iOS platforms, simply launch this workspace in <strong className="text-text">Safari</strong>, tap the primary share icon, and select <strong className="text-text">"Add to Home Screen"</strong>.
+            </p>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Feature Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         {/* Card 1: Nesting Hierarchy */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
           <div className="p-3 w-min rounded-small bg-progress-fill/10 text-progress-fill">
@@ -163,7 +108,7 @@ export const AppGuideView: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: 100% Offline Integrity */}
+        {/* Card 2: Offline Privacy */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
           <div className="p-3 w-min rounded-small bg-accent/10 text-accent">
             <ShieldCheck size={22} />
@@ -173,7 +118,7 @@ export const AppGuideView: React.FC = () => {
             <p className="text-xs text-muted-text leading-relaxed">
               Your journal is personal. We store your entire trees inside the secure browser-managed 
               <strong> IndexedDB </strong> storage. Data never leaves your device — resulting in instant local loading 
-              with completely zero cloud sync latencies or sign-ups required.
+              with completely zero cloud sync latencies.
             </p>
           </div>
           <div className="mt-auto pt-3 border-t border-border/20 flex items-center justify-between text-[11px] font-bold text-accent uppercase tracking-widest">
@@ -182,7 +127,7 @@ export const AppGuideView: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Intelligent Progress */}
+        {/* Card 3: Metrics */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
           <div className="p-3 w-min rounded-small bg-progress-fill/15 text-progress-fill">
             <Check size={22} />
@@ -190,8 +135,8 @@ export const AppGuideView: React.FC = () => {
           <div className="space-y-2">
             <h3 className="text-base font-bold text-text">Bubbling Progress Metrics</h3>
             <p className="text-xs text-muted-text leading-relaxed">
-              Switch any card between being a raw **Text Note**, a structured **Tasks Checklist**, or a **Mixed** card. 
-              Sub-checklists automatically summarize progress and bubble those scores up to visual indicators in parent cards.
+              Switch any card between being a raw Text Note, a structured Tasks Checklist, or a Mixed card. 
+              Sub-checklists automatically summarize progress and bubble those scores up.
             </p>
           </div>
           <div className="mt-auto pt-3 border-t border-border/20 flex items-center justify-between text-[11px] font-bold text-accent uppercase tracking-widest">
@@ -200,7 +145,7 @@ export const AppGuideView: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: High-Performance PWA */}
+        {/* Card 4: Shell */}
         <div className="bg-card border border-border/80 rounded-card p-6 flex flex-col gap-4">
           <div className="p-3 w-min rounded-small bg-accent/15 text-accent">
             <Smartphone size={22} />
@@ -209,7 +154,7 @@ export const AppGuideView: React.FC = () => {
             <h3 className="text-base font-bold text-text">Mobile-Native App Shell</h3>
             <p className="text-xs text-muted-text leading-relaxed">
               Equipped with service worker caching via `Vite PWA`, browser frames are completely stripped.
-              No complex reload flickering, responsive touch targets, safe area spacing, and support for home screen launch.
+              No complex reload flickering, responsive touch targets, and support for home screen launch.
             </p>
           </div>
           <div className="mt-auto pt-3 border-t border-border/20 flex items-center justify-between text-[11px] font-bold text-accent uppercase tracking-widest">
