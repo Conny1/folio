@@ -203,7 +203,67 @@ export const useStore = create<FolioState>()(
             children: card.children.map(child => sanitizeCard(child, newId))
           };
         };
- 
+
+        // Seed if empty after hydration
+        if (state.roots.length === 0) {
+          const rootId = uuidv4();
+          const child1Id = uuidv4();
+          const grandchild1Id = uuidv4();
+          const child2Id = uuidv4();
+
+          const demoRoot: Card = {
+            id: rootId,
+            title: '🚀 2026 Plan',
+            note: 'Welcome to Folio! This is a tree-based note manager.\n\n- Everything is a card\n- Cards can have tasks\n- Cards can have children\n- Progress is automatic',
+            type: 'mixed',
+            tasks: [
+              { id: uuidv4(), text: 'Learn Folio basics', done: true },
+              { id: uuidv4(), text: 'Create my first tree', done: false }
+            ],
+            children: [
+              {
+                id: child1Id,
+                title: 'Personal Goals',
+                note: 'Focus on health and learning.',
+                type: 'note',
+                tasks: [],
+                children: [
+                   {
+                    id: grandchild1Id,
+                    title: 'Read 12 books',
+                    note: 'One book per month.',
+                    type: 'checklist',
+                    tasks: [
+                       { id: uuidv4(), text: 'Pick first book', done: false }
+                    ],
+                    children: [],
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                  }
+                ],
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+              },
+              {
+                id: child2Id,
+                title: 'Work Projects',
+                note: 'Upcoming deadlines.',
+                type: 'checklist',
+                tasks: [
+                  { id: uuidv4(), text: 'Finish Q1 report', done: false }
+                ],
+                children: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+              }
+            ],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          
+          state.roots = [demoRoot];
+          state.activeCardId = demoRoot.id;
+        } else {
           // Sanitize existing roots if they contain non-UUID IDs
           const needsSanitization = state.roots.some(r => !isUuid(r.id));
           if (needsSanitization) {
@@ -219,7 +279,7 @@ export const useStore = create<FolioState>()(
             state.roots = sanitizedRoots;
             state.activeCardId = newActiveId || (sanitizedRoots[0]?.id || null);
           }
-        
+        }
       }
     }
   )
