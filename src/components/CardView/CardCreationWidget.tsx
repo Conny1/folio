@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CardType } from '../../store/useStore';
-import { Plus, CheckSquare } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface CardCreationWidgetProps {
@@ -35,7 +35,8 @@ export const CardCreationWidget: React.FC<CardCreationWidgetProps> = ({
   };
 
   return (
-    <div className={cn("bg-card border border-border rounded-card p-3.5 space-y-3.5 shadow-xs", className)}>
+    <div className={cn("px-2 py-1 space-y-2 w-full", className)}>
+      {/* Seamless Borderless Input Field */}
       <input
         autoFocus
         type="text"
@@ -43,33 +44,29 @@ export const CardCreationWidget: React.FC<CardCreationWidgetProps> = ({
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full bg-transparent border-none focus:ring-0 text-[13px] p-0 font-bold text-text placeholder:text-border"
+        className="w-full bg-transparent border-none outline-none focus:ring-0 text-[13px] font-medium text-text placeholder:text-muted-text/30 p-0"
       />
       
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] text-muted-text font-black tracking-wider uppercase flex items-center gap-1">
-          <CheckSquare size={12} className="text-accent" />
-          <span>New Journal Node</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {onCancel && (
-            <button
-              onClick={onCancel}
-              className="text-[10px] font-black uppercase tracking-wider text-muted-text hover:text-accent px-2.5 py-1.5 rounded-small transition-all cursor-pointer"
-            >
-              Cancel
-            </button>
-          )}
+      {/* Action Tray */}
+      <div className="flex items-center justify-end gap-1.5">
+        {onCancel && (
           <button
-            onClick={() => handleSubmit()}
-            disabled={!title.trim()}
-            className="bg-accent text-active-text font-black uppercase tracking-wider text-[10px] px-3.5 py-1.5 rounded-small disabled:opacity-35 hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            type="button"
+            onClick={onCancel}
+            className="text-[10px] font-bold uppercase tracking-wider text-muted-text/60 hover:text-text px-2 py-1 rounded transition-colors cursor-pointer"
           >
-            <Plus size={12} />
-            <span>Create</span>
+            Cancel
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={() => handleSubmit()}
+          disabled={!title.trim()}
+          className="text-[10px] font-bold uppercase tracking-wider text-accent disabled:opacity-30 disabled:hover:bg-transparent hover:bg-accent/5 px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer"
+        >
+          <Plus size={11} />
+          <span>Create</span>
+        </button>
       </div>
     </div>
   );
